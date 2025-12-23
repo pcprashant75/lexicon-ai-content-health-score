@@ -7,7 +7,8 @@ import { AnalysisResult, UserInputs } from "./types";
  * Uses Google Search grounding to extract high-impact content from the provided URL.
  */
 export const analyzeWebsite = async (inputs: UserInputs): Promise<AnalysisResult> => {
-  const apiKey = process.env.API_KEY;
+  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
   
   if (!apiKey) {
     throw new Error("INTERNAL_CONFIG_ERROR: API_KEY is missing. Please add it to your environment variables (e.g., in Vercel Dashboard).");
