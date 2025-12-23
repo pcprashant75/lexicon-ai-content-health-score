@@ -2,34 +2,39 @@ import { GoogleGenAI } from "@google/genai";
 import { AnalysisResult, UserInputs } from "./types";
 
 /**
- * Audit website content using multi-agent AI logic powered by Gemini.
- * Uses Google Search grounding to extract high-impact content from the provided URL.
+ * AI-First Content Health Audit
+ * Server-side Gemini analysis with Google Search grounding
  */
 export const analyzeWebsite = async (
   inputs: UserInputs
 ): Promise<AnalysisResult> => {
-
-  // ✅ Vite-compatible environment variable
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+  // 🔐 Server-side environment variable (Vercel / Node)
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     throw new Error(
-      "INTERNAL_CONFIG_ERROR: VITE_GEMINI_API_KEY is missing. Please add it in the Vercel Environment Variables."
+      "INTERNAL_CONFIG_ERROR: GEMINI_API_KEY is missing in environment variables."
     );
   }
 
-  // ✅ Correct Gemini client initialization
+  // ✅ Initialize Gemini client
   const ai = new GoogleGenAI({ apiKey });
 
-  // 🔍 Multi-agent analysis prompt
-  const prompt = `
+  // 🧠 System instruction (critical for reliability)
+  const systemInstruction = `
+You are a senior multi-agent AI content intelligence system.
+You analyze websites objectively and strategically.
+You MUST return ONLY a single valid JSON object.
+Do not include markdown, explanations, or commentary outside JSON.
+`;
+
+  // 🔍 User prompt
+  const userPrompt = `
 Analyze the website content for: ${inputs.websiteUrl}
 
-You are a multi-agent AI content intelligence system.
-
 TASKS:
-1. Identify the INDUSTRY and business model.
-2. Extract high-impact content (Headings, CTAs) using Google Search.
+1. Identify the industry and business model.
+2. Extract high-impact content (headings, CTAs) using Google Search grounding.
 3. Evaluate content maturity across five dimensions:
    - Hygiene
    - Relevance
@@ -37,10 +42,9 @@ TASKS:
    - Differentiation
    - Advanced Strategy
 
-IMPORTANT:
-- You MUST return a single, valid JSON object.
-- All score values must be numbers between 0 and 100.
-- Do NOT include markdown or commentary outside the JSON.
+SCORING RULES:
+- All scores must be numbers between 0 and 100.
+- Be realistic and consistent.
 
 EXPECTED JSON STRUCTURE:
 {
@@ -69,23 +73,38 @@ EXPECTED JSON STRUCTURE:
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: prompt,
+      contents: [
+        {
+          role: "system",
+          parts: [{ text: systemInstruction }]
+        },
+        {
+          role: "user",
+          parts: [{ text: userPrompt }]
+        }
+      ],
       config: {
+        responseMimeType: "application/json",
         tools: [{ googleSearch: {} }]
       }
     });
 
-    const rawText = response.text ?? "";
-
-    // 🧠 Robust JSON extraction (handles citations / markdown noise)
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("The AI returned an invalid response format.");
+    if (!response.text) {
+      throw new Error("Empty response from Gemini.");
     }
 
-    const result = JSON.parse(jsonMatch[0]) as AnalysisResult;
+    // ✅ Safe JSON parse (JSON-only mode enforced)
+    const result = JSON.parse(response.text) as AnalysisResult;
 
-    // 🌐 Extract grounding sources (Google Search citations)
+    // 🧮 Clamp scores defensively
+    const clamp = (n: number) => Math.max(0, Math.min(100, n));
+
+    result.overallScore = clamp(result.overallScore);
+    Object.values(result.categories).forEach((cat: any) => {
+      cat.score = clamp(cat.score);
+    });
+
+    // 🌐 Extract Google Search grounding sources
     const groundingChunks =
       response.candidates?.[0]?.groundingMetadata?.groundingChunks;
 
@@ -99,11 +118,10 @@ EXPECTED JSON STRUCTURE:
     }
 
     return result;
-
   } catch (error: any) {
-    console.error("Intelligence engine error:", error);
+    console.error("Gemini intelligence error:", error);
     throw new Error(
-      error?.message || "Unknown error occurred during content analysis."
+      error?.message || "Content analysis failed unexpectedly."
     );
   }
 };
