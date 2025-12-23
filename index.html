@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LexiConn | AI Content Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --brand-primary: #ad3642;
+        --brand-primary-hover: #8e2b35;
+        --brand-light: #fdf2f3;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f9fafb;
+        color: #111827;
+      }
+      .font-display {
+        font-family: 'Space+Grotesk', sans-serif;
+      }
+      .text-brand { color: var(--brand-primary); }
+      .bg-brand { background-color: var(--brand-primary); }
+      .border-brand { border-color: var(--brand-primary); }
+      
+      .recharts-radar-antialiased {
+        filter: drop-shadow(0 0 4px rgba(173, 54, 66, 0.1));
+      }
+
+      /* PDF Generation Styles */
+      #pdf-template {
+        position: absolute;
+        left: -9999px;
+        top: -9999px;
+        width: 800px;
+        background: white;
+        color: #111827;
+        padding: 40px;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "html2canvas": "https://esm.sh/html2canvas@1.4.1",
+    "jspdf": "https://esm.sh/jspdf@2.5.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
